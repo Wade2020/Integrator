@@ -101,17 +101,19 @@ int main()
 	vector<double> xvector;					// To hold omega 2 values
 	vector<double> yvector;					// Epsilon in Aharonian, corresponding to the energy of the particle
 	yvector.resize(nyele);
-	vector< vector<double> > table(nxele, vector<double>(nyele)); // Table to hold integration values, where order is [column][row]
+	
+	 // Table to hold integration values, where order is [column][row]
+	vector< vector<double> > table(nxele, vector<double>(nyele));
 	
 	double mino2 = 1000;			// X range comes from w1*w2 goes from 10 to 1000 with w1 (omega 1) fixed
 	double maxo2 = 100000;
 	double stepo2 = log10(maxo2 / mino2) / (nxele - 1);	// Logarithmic step size for omega 2
 	double minep, maxep, stepep;
-	double abs_error = 1.0e-8;		// Integration quantities required for GSL function
-	double rel_error = 1.0e-8;		// Input: absolute and relative error bounds for integration
-	double abserr;					// Returned: estimate of absolute error
-	size_t neval;					// Returned: number of function evaluations
-	gsl_function my_function;		// Defining GSL function to integrate
+	double abs_error = 1.0e-8;				// Integration quantities required for GSL function
+	double rel_error = 1.0e-8;				// Input: absolute and relative error bounds for integration
+	double abserr;						// Returned: estimate of absolute error
+	size_t neval;						// Returned: number of function evaluations
+	gsl_function my_function;				// Defining GSL function to integrate
 	my_function.function = &integrand;
 	my_function.params = &object;
 
@@ -123,11 +125,13 @@ int main()
 	for (int bcounto2 = 0; bcounto2 < nxele; bcounto2++)		// Makes the x array, where the values go from 100 to 100000
 	{
 		xvector.push_back(mino2 * pow(10, bcounto2*stepo2));	// Assinging values to xvector
-		object.omega2 = xvector[bcounto2];						// Reassgin value to array
-		object.wavee = object.omega2;							// Reassign value to wave ebergy
-		minep = ((object.wavee) / 2)*(1 - sqrt(1 - (1 / (object.omega1 * object.wavee))));		// Sets min and max values for epsilon
+		object.omega2 = xvector[bcounto2];			// Reassgin value to array
+		object.wavee = object.omega2;				// Reassign value to wave ebergy
+		
+		// Sets min and max values for epsilon and sets linear step size
+		minep = ((object.wavee) / 2)*(1 - sqrt(1 - (1 / (object.omega1 * object.wavee))));
 		maxep = ((object.wavee) / 2)*(1 + sqrt(1 - (1 / (object.omega1 * object.wavee))));
-		stepep = (maxep - minep) / (nyele - 1);					// Linear step size for epsilon
+		stepep = (maxep - minep) / (nyele - 1);
 
 		for (int bcountep = 0; bcountep < nyele; bcountep++)	// Makes y array for each value of omega 2 as the max value of y depends on x
 		{
@@ -206,13 +210,12 @@ int main()
 	// This section runs cutpoint for two different values of omega 2. It is outputted in the "Data Output" section below
 
 	Cutpoint cm;
-	int ncp = (nyele - 1) / 2;									// Number of cutpoints used on the epsilon vector
-
-	//table[nxele - 1][0] = 0.001;
-
+	int ncp = (nyele - 1) / 2;				// Number of cutpoints used on the epsilon vector
+	
 	cm.Initialize(yvector, table[nxele - 1], ncp);
+	//table[nxele - 1][0] = 0.001;
 	const int nrand_num = 10000;				// Number of random numbers
-	vector<double> ksi(nrand_num), rand_val(nrand_num), rand_val2(nrand_num);		// Array of random numbers and corresponding cutpoints
+	vector<double> ksi(nrand_num), rand_val(nrand_num), rand_val2(nrand_num);	// Array of random numbers and corresponding cutpoints
 	srand(time(0));						// Attempt to "randomly" seed values with seconds value
 
 	for (int i = 0; i<nrand_num; i++)
@@ -244,9 +247,10 @@ int main()
 
 	// Fills in a table of indices for use in cutpoint based on integration table
 	for (int i = 0; i < nxele; i++) {
-		for (int t_c_c = 0; t_c_c < nyele; t_c_c++) {
+		for (int t_c_c = 0; t_c_c < nyele; t_c_c++) 
+		{
 			table_column[t_c_c] = table[i][t_c_c];
-		};
+		}
 
 		table_column[0] = 0.001;
 
@@ -266,7 +270,6 @@ int main()
 
 
 	// Now use cutpoint for the desired value of omega 2
-
 	for (int i = 0; i<nrand_num; i++)
 	{
 		rand_val[i] = cm(ksi[i], cp_table[om2_ind], yvector, table[om2_ind], ncp);
@@ -283,16 +286,13 @@ int main()
 	outputFile.open("MC.txt");						// Output to text file called "MC"
 	
 	// Output y array values, integration values, and cutpoint values for plotting in Python
-	for (int output_counter = 0; output_counter < nyele; output_counter++) 
-	{
+	for (int output_counter = 0; output_counter < nyele; output_counter++)
 		outputFile << yvector[output_counter] << " " << table[om2_ind][output_counter] << " " << rand_val[output_counter] << endl;	// Output y array value and integration value
-	}
 
 	// Continues to output cutpoint values in form to allow both types to be in one file
 	for (int output_counter = nyele; output_counter < (nrand_num - 1); output_counter++) 
-	{
 		outputFile << 0 << " " << 0 << " " << rand_val[output_counter] << endl;
-	}
+		
 	outputFile << 0 << " " << 0 << " " << rand_val[nrand_num - 1];	// Outputs without extra endline for Python plotting
 	outputFile.close();												// Stop outputting to file
 
@@ -306,21 +306,21 @@ int main()
 	ofstream outputFile;
 	outputFile.open("Data.txt");		// Output to text file called "Data"
 	
-	for (int output_counter = 0; output_counter < nyele; output_counter++) {
-	outputFile << yvector[output_counter] << " " << table[nxele - 1][output_counter] << " " << rand_val[output_counter] << " " << table[x_if][output_counter] << " " << rand_val2[output_counter] << endl;	// Output y array value and integration value
-	}
+	for (int output_counter = 0; output_counter < nyele; output_counter++)
+		outputFile << yvector[output_counter] << " " << table[nxele - 1][output_counter] << " " << rand_val[output_counter] << " " << table[x_if][output_counter] << " " << rand_val2[output_counter] << endl;	// Output y array value and integration value
 
-	for (int output_counter = nyele; output_counter < (nrand_num-1); output_counter++) {
+	for (int output_counter = nyele; output_counter < (nrand_num-1); output_counter++)
 		outputFile << 0 << " " << 0 << " " << rand_val[output_counter] <<  " " << 0 << " " << rand_val2[output_counter] << endl;	// Output y array value and integration value
-	}
+
 	outputFile << 0 << " " << 0 << " " << rand_val[nrand_num-1] << " " << 0 << " " << rand_val2[nrand_num-1];	// Output y array value and integration value
 	outputFile.close();					// Stop outputting to file
 
 	/*
 	// Outputs values of cross section equation (function is correct); if you use, remember to close file
 	cout << "Outputting test values of cross section equation" << endl;
-	for (double output_counter = minep; output_counter < maxep; output_counter++) {
-	outputFile << output_counter << " " << intensity(output_counter, object.pi, object.r, object.omega1, object.omega2, object.wavee) << endl;
+	for (double output_counter = minep; output_counter < maxep; output_counter++) 
+	{
+		outputFile << output_counter << " " << intensity(output_counter, object.pi, object.r, object.omega1, object.omega2, object.wavee) << endl;
 	}
 	
 	/*******************************************************************************************************************************************************************************************************/
@@ -334,8 +334,8 @@ int main()
 
 	int width = 15;  // setw width for output
 	bool print_val = false;
-	int mod_step = nyele / 6;						// Set up for nxele = nyele
-												// For only outputting so many values in the table
+	int mod_step = nyele / 6;										// Set up for nxele = nyele
+														// For only outputting so many values in the table
 	
 	cout << "Now outputing the table values with every " << mod_step << " shown" << endl;
 
@@ -351,7 +351,7 @@ int main()
 		for (int x_print_count = 0; x_print_count < nxele; x_print_count++) {				// But first loop over columns
 			if (((y_print_count % mod_step) == 1) && ((x_print_count % mod_step) == 1))		// Print every mod_step time
 			{
-				cout << table[x_print_count][y_print_count] << setw(width);					// Print integration values
+				cout << table[x_print_count][y_print_count] << setw(width);			// Print integration values
 				print_val = true;															// Document that the print occured
 			}
 		}
@@ -364,7 +364,7 @@ int main()
 	// Test more carefully
 	for (size_t j = nyele; j--;){
 		for (size_t i = nxele; i--;){ 
-			if (((j % mod_step) == 1) && ((i % mod_step) == 1))		// Print every mod_step time
+			if (((j % mod_step) == 1) && ((i % mod_step) == 1))				// Print every mod_step time
 			{
 				cout << table[i][j] << setw(width);					// Print integration values
 				print_val = true;															// Document that the print occured
@@ -385,46 +385,47 @@ int main()
 /*	// Interpolates values for the table, per epsilon, based on a value given for omega 2. Uses the Numerical Recipes code at the top of the program.
 	// May have trouble with new normalization scheme. Rework if so.
 
-	double rand_num;										// The random number itself
-	//const int nrand_num = 10000;							// Number of random numbers
-	//vector<double> table_column;							// Array for different epsilons for interpolated omega 2
+	double rand_num;									// The random number itself
+	//const int nrand_num = 10000;								// Number of random numbers
+	//vector<double> interp_table_column;							// Array for different epsilons for interpolated omega 2
 	double om2_interp = 1800;								// Value of omega 2 to interpolate for
 	cout << endl << "Now outputting interpolation values for omega 2 equals " << om2_interp << endl;
 
 	for (int interp_y_count = 0; interp_y_count < nyele; interp_y_count++)
 	{
-		vector<double> table_row;			// Holding the row of the table being interpolated
-											// The "xx" vector is xvector, "yy" array is table_row
+		vector<double> table_row;							// Holding the row of the table being interpolated
+												// The "xx" vector is xvector, "yy" array is table_row
 
 		for (int interp_x_count = 0; interp_x_count < nxele; interp_x_count++)
 		{
 			table_row.push_back(table[interp_x_count][interp_y_count]);		// Reassinging each row of the table to an array to interpolate from
-		};
+		}
 
 		// For linear, use Linear_interp myfunc(xvector, table_row), for polynomial use Poly_interp myfunc(xvector,table_row,4), where 4 is cubic (or just do any #) 
 		Linear_interp myfunc(xvector, table_row);
-		table_column.push_back(myfunc.interp(om2_interp));		// Makes the array of table values for each epsilon
+		table_column.push_back(myfunc.interp(om2_interp));				// Makes the array of table values for each epsilon
 	}
 
 	// Now Monte Carlo and plot
 
-	vector<double> rand_value3;			// Array to hold the value coressponding to the random number in the integration table
-	for (int rand_count = 0; rand_count < nrand_num; rand_count++)	// Test several random numbers
+/*	vector<double> rand_value3;			// Array to hold the value coressponding to the random number in the integration table
+	for (int rand_count = 0; rand_count < nrand_num; rand_count++)				// Test several random numbers
 	{
 		rand_num = drand48();
 
-		for (int rand_tab_count = 1; rand_tab_count < nyele; rand_tab_count++)	// Loops to find where the random number is
+		// Loops to find where the random number is
+		for (int rand_tab_count = 1; rand_tab_count < nyele; rand_tab_count++)
 		{
-			if (rand_num < table_column[rand_tab_count])	// If the random value is less than a value of epsilon...
+			if (rand_num < table_column[rand_tab_count])				// If the random value is less than a value of epsilon...
 			{
-				rand_value3.push_back(yvector[rand_tab_count]);		// ... than that value of epsilon is recorded for later histogram plotting...
-				break;													// ... and the code continues on; the value corresponding to the random number is found
-			}													// Otherwise the loop continues trying to find the value
+				rand_value3.push_back(yvector[rand_tab_count]);			// ... than that value of epsilon is recorded for later histogram plotting...
+				break;								// ... and the code continues on; the value corresponding to the random number is found
+			}									// Otherwise the loop continues trying to find the value
 		}
 	}
 
 /*	// Plots the distribution of integrated values to get a sense of the probability outcome
-	// Could put the output statement right after te assignment to reduce lines, but this is a nice part on its own
+	// Could put the output statement right after te assignment to reduce lines
 	cout << endl << "Now outputting interpolated, normalized table values" << endl;
 	for (int rand_tab_count = 0; rand_tab_count < nyele; rand_tab_count++) {
 		cout << table_column[rand_tab_count] << endl;
@@ -434,7 +435,8 @@ int main()
 
 
 	outputFile.open("Interp.txt");		// Output to text file called "Interp"
-	for (int output_counter = 0; output_counter < nyele; output_counter++) {
+	for (int output_counter = 0; output_counter < nyele; output_counter++)
+	{
 		outputFile << yvector[output_counter] << " " << table[nxele - 1][output_counter] << " " << table_column[output_counter] << endl;	// Output y array value and integration value
 	}
 	outputFile.close();					// Stop outputting to file
